@@ -1,0 +1,17 @@
+EmpID is artificially created as a mix of Last and PD
+Grade belongs to Person
+Position has a minimum and maximum possible grade that can be used to fill
+ - Min and Max were not available during initial data acquisition.  Set to blank.  Will fill later.  Maybe.
+"Reports to" is a feature of the position, not the person
+ - We can modify the values to remove the PersonID
+Org Code is the database key for the Operation Unit
+Positions are assigned to an Org Code
+Operation Unit is the only part of the Org Code we care about
+
+Needs to show:
+- Name
+- Position title
+- PD# (Called the Master Record #)
+- Pay plan
+- Series
+- Grade
