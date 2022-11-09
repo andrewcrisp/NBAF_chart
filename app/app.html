@@ -1,10 +1,7 @@
 <form enctype="multipart/form-data">
-  <input id="upload" type=file name="files[]">
-</form>
+    <input id="upload" type=file name="files[]"></form>
 <input type="button" id="upload" value="Upload" onclick="UploadProcess()" />
 <textarea class="form-control" rows=35 cols=120 id="xlx_json"></textarea>
-
-
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/jszip.js"></script>
@@ -13,19 +10,19 @@
 <script src="./excel_functions.js"></script>
 <script src="./utils.js"></script>
 <script>
-  document.getElementById('upload').addEventListener('change', handleFileSelect, false);
-  var mytable;
-  var myobjects;
+    document.getElementById('upload').addEventListener('change', handleFileSelect, false);
+    var mytable;
+    var myobjects;
   
-  function handleFileSelect(evt) {
-    var files = evt.target.files; // FileList object
-    var xl2json = new ExcelToJSON();
-	parseExcel(files[0])
-  }
+    function handleFileSelect(evt) {
+        var files = evt.target.files; // FileList object
+        //var xl2json = new ExcelToJSON();
+        parseExcel(files[0])
+    }
   
-  function UploadProcess() {
-    var files =  document.getElementById('upload')
-	mytable = parseExcel(files.files[0])
-  }
+    function UploadProcess() {
+        var files =  document.getElementById('upload')
+	    mytable = parseExcel(files.files[0])
+    }
 
 </script>
