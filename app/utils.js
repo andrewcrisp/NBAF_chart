@@ -36,7 +36,7 @@ class Position{
 				this.children.forEach(c => c.AddChildren(arr))
 			}
 	    }
-		this.nodeContent = item['Name'] + '\n' + item['Position']
+		this.nodeContent = this.Title + '\n' + this.PDNumber + '\n' + this.PayCode
 	}
 }
 
@@ -68,3 +68,15 @@ function BuildNestedArray(arr) {
 function onlyUnique(value, index, self) {
   return self.indexOf(value) === index;
 }
+
+var nodeTemplate = function(data) {
+  return `
+	<span class="office">${data.DeptID}</span>
+	<div class="title">${data.name}</div>
+	<div class="content">
+		${data.Title}
+		<br />${data.PDNumber}
+		<br />${data.PayCode}
+	</div>
+  `;
+};

@@ -54,9 +54,12 @@ function parseExcel(file) {
 	  $('#chart-container').orgchart({
           'data' : ancestors[0],
           'nodeContent': 'nodeContent',
-		  'nodeTitle': 'Title',
-		  
-		  'zoom':true
+		  'nodeTitle': 'name',
+		  'verticalLevel': 6,
+		  'visibleLevel': 3,
+		  'nodeTemplate': nodeTemplate,
+		  //'pan': true,
+		  'zoom': true
       });
     })
   };
