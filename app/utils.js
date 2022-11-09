@@ -36,6 +36,7 @@ class Position{
 				this.children.forEach(c => c.AddChildren(arr))
 			}
 	    }
+		this.nodeContent = item['Name'] + '\n' + item['Position']
 	}
 }
 
