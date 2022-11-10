@@ -1,18 +1,20 @@
 <link rel="stylesheet" href="css/jquery.orgchart.css">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/jquery-ui.css">
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/jszip.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/xlsx.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
 <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/orgchart/3.1.1/js/jquery.orgchart.min.js"></script>-->
 <script src="./js/jquery.orgchart.js"></script>
 <script src="./excel_functions.js"></script>
 <script src="./utils.js"></script>
 <form enctype="multipart/form-data">
     <input id="upload" type=file name="files[]"></form>
-<input type="button" id="upload" value="Upload" onclick="UploadProcess()" />
+<!--<input type="button" id="upload" value="Upload" onclick="UploadProcess()" /> -->
 <!--<textarea class="form-control" rows=35 cols=120 id="xlx_json"></textarea>-->
-<div id="chart-container"></div>
+<div id="chart-container" style="height: 90vh;"></div>
 
 
 <script>
@@ -20,6 +22,7 @@
     var mytable;
     var myobjects;
     var ancestors;
+	var oc;
 	
     function handleFileSelect(evt) {
         var files = evt.target.files; // FileList object
@@ -51,15 +54,26 @@ function parseExcel(file) {
       //myobjects = convert(mytable)
 	  myobjects = SelectFields(mytable)
 	  ancestors = BuildNestedArray(myobjects)
-	  $('#chart-container').orgchart({
+	  oc=$('#chart-container').orgchart({
           'data' : ancestors[0],
           'nodeContent': 'nodeContent',
 		  'nodeTitle': 'name',
-		  'verticalLevel': 6,
-		  'visibleLevel': 3,
+		  'verticalLevel': 5,
+		  //'visibleLevel': 8,
 		  'nodeTemplate': nodeTemplate,
-		  //'pan': true,
-		  'zoom': true
+		  'pan': true,
+		  'zoom': true,
+          'createNode': function($node, data) {
+		      $node.on('click', function(event) {
+			      if (!$(event.target).is('.edge, .toggleBtn')) {
+                      var $this = $(this);
+                      var $chart = $this.closest('.orgchart');
+                      var newX = window.parseInt(($chart.outerWidth(true)/2) - ($this.offset().left - $chart.offset().left) - ($this.outerWidth(true)/2));
+                      var newY = window.parseInt(($chart.outerHeight(true)/2) - ($this.offset().top - $chart.offset().top) - ($this.outerHeight(true)/2));
+                      $chart.css('transform', 'matrix(1, 0, 0, 1, ' + newX + ', ' + newY + ')');
+                  }
+              });
+          }
       });
     })
   };
@@ -70,4 +84,18 @@ function parseExcel(file) {
 
   reader.readAsBinaryString(file);
 };
+
+//$( function() {
+//    $( "#chart-container" ).resizable();
+//} );
+
+$(window).resize(function() {
+  var width = $(window).width();
+  if(width > 576) {
+	oc.init({'verticalLevel': undefined});
+  } else {
+	oc.init({'verticalLevel': 2});
+  }
+});
+
 </script>
