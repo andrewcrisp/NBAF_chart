@@ -2,21 +2,22 @@
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/jquery-ui.css">
 
+
+<form enctype="multipart/form-data">
+    <input id="upload" type=file name="files[]"></form>
+<div id="chart-container" style="height: 90vh;"></div>
+<!--<button class="oc-export-btn" id="Export">Export</button>-->
+
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/es6-promise/4.1.1/es6-promise.auto.min.js"></script>
+<script type="text/javascript" src="js/html2canvas.min.js"></script>
+<script type="text/javascript" src="js/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/jszip.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/xlsx.js"></script>
-<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
-<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/orgchart/3.1.1/js/jquery.orgchart.min.js"></script>-->
+<!--<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>-->
 <script src="./js/jquery.orgchart.js"></script>
 <script src="./excel_functions.js"></script>
 <script src="./utils.js"></script>
-<form enctype="multipart/form-data">
-    <input id="upload" type=file name="files[]"></form>
-<!--<input type="button" id="upload" value="Upload" onclick="UploadProcess()" /> -->
-<!--<textarea class="form-control" rows=35 cols=120 id="xlx_json"></textarea>-->
-<div id="chart-container" style="height: 90vh;"></div>
-
-
 <script>
     document.getElementById('upload').addEventListener('change', handleFileSelect, false);
     var mytable;
@@ -34,68 +35,45 @@
         var files =  document.getElementById('upload')
 	    mytable = parseExcel(files.files[0])
     }
-
-
-function parseExcel(file) {
-  var reader = new FileReader();
-
-  reader.onload = function(e) {
-    var data = e.target.result;
-    var workbook = XLSX.read(data, {
-      type: 'binary'
-    });
-    workbook.SheetNames.forEach(function(sheetName) {
-      // Here is your object
-      var XL_row_object = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
-      var json_object = JSON.stringify(XL_row_object);
-      console.log(JSON.parse(json_object));
-      //jQuery('#xlx_json').val(json_object);
-      mytable = XL_row_object;
-      //myobjects = convert(mytable)
-	  myobjects = SelectFields(mytable)
-	  ancestors = BuildNestedArray(myobjects)
-	  oc=$('#chart-container').orgchart({
-          'data' : ancestors[0],
-          'nodeContent': 'nodeContent',
-		  'nodeTitle': 'name',
-		  'verticalLevel': 5,
-		  //'visibleLevel': 8,
-		  'nodeTemplate': nodeTemplate,
-		  'pan': true,
-		  'zoom': true,
-          'createNode': function($node, data) {
-		      $node.on('click', function(event) {
-			      if (!$(event.target).is('.edge, .toggleBtn')) {
-                      var $this = $(this);
-                      var $chart = $this.closest('.orgchart');
-                      var newX = window.parseInt(($chart.outerWidth(true)/2) - ($this.offset().left - $chart.offset().left) - ($this.outerWidth(true)/2));
-                      var newY = window.parseInt(($chart.outerHeight(true)/2) - ($this.offset().top - $chart.offset().top) - ($this.outerHeight(true)/2));
-                      $chart.css('transform', 'matrix(1, 0, 0, 1, ' + newX + ', ' + newY + ')');
-                  }
-              });
-          }
-      });
-    })
-  };
-
-  reader.onerror = function(ex) {
-    console.log(ex);
-  };
-
-  reader.readAsBinaryString(file);
-};
-
-//$( function() {
-//    $( "#chart-container" ).resizable();
-//} );
-
-$(window).resize(function() {
-  var width = $(window).width();
-  if(width > 576) {
-	oc.init({'verticalLevel': undefined});
-  } else {
-	oc.init({'verticalLevel': 2});
-  }
-});
-
+    function parseExcel(file) {
+      var reader = new FileReader();
+    
+      reader.onload = function(e) {
+        var data = e.target.result;
+        var workbook = XLSX.read(data, {
+          type: 'binary'
+        });
+        workbook.SheetNames.forEach(function(sheetName) {
+          // Here is your object
+          var XL_row_object = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
+          var json_object = JSON.stringify(XL_row_object);
+          console.log(JSON.parse(json_object));
+          //jQuery('#xlx_json').val(json_object);
+          mytable = XL_row_object;
+          //myobjects = convert(mytable)
+    	  myobjects = SelectFields(mytable)
+    	  ancestors = BuildNestedArray(myobjects)
+    	  $('#chart-container').orgchart({
+              'data' : ancestors[0],
+              'nodeContent': 'nodeContent',
+    		  'nodeTitle': 'name',
+    		  'verticalLevel': 5,
+    		  //'visibleLevel': 8,
+    		  'nodeTemplate': nodeTemplate,
+    		  //'pan': true,
+    		  'zoom': true,
+    		  'exportButton': true,
+    		  //'exportButtonName': 'export',
+              'exportFileextension': 'png',
+              'exportFilename': 'MyOrgChart'
+          });
+        })
+      };
+    
+      reader.onerror = function(ex) {
+        console.log(ex);
+      };
+    
+      reader.readAsBinaryString(file);
+    };
 </script>
