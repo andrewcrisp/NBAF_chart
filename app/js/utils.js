@@ -80,3 +80,81 @@ var nodeTemplate = function(data) {
 	</div>
   `;
 };
+
+
+var process_wb = (function() {
+	var OUT = document.getElementById('out');
+	var HTMLOUT = document.getElementById('htmlout');
+
+	var get_format = (function() {
+		var radios = document.getElementsByName( "format" );
+		return function() {
+			for(var i = 0; i < radios.length; ++i) if(radios[i].checked || radios.length === 1) return radios[i].value;
+		};
+	})();
+
+	var to_json = function to_json(workbook) {
+		var result = {};
+		workbook.SheetNames.forEach(function(sheetName) {
+			var roa = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {header:1});
+			if(roa.length) result[sheetName] = roa;
+		});
+		return JSON.stringify(result, 2, 2);
+	};
+
+	var to_csv = function to_csv(workbook) {
+		var result = [];
+		workbook.SheetNames.forEach(function(sheetName) {
+			var csv = XLSX.utils.sheet_to_csv(workbook.Sheets[sheetName]);
+			if(csv.length){
+				result.push("SHEET: " + sheetName);
+				result.push("");
+				result.push(csv);
+			}
+		});
+		return result.join("\n");
+	};
+
+	var to_fmla = function to_fmla(workbook) {
+		var result = [];
+		workbook.SheetNames.forEach(function(sheetName) {
+			var formulae = XLSX.utils.get_formulae(workbook.Sheets[sheetName]);
+			if(formulae.length){
+				result.push("SHEET: " + sheetName);
+				result.push("");
+				result.push(formulae.join("\n"));
+			}
+		});
+		return result.join("\n");
+	};
+
+	var to_html = function to_html(workbook) {
+		HTMLOUT.innerHTML = "";
+		workbook.SheetNames.forEach(function(sheetName) {
+			var htmlstr = XLSX.write(workbook, {sheet:sheetName, type:'string', bookType:'html'});
+			HTMLOUT.innerHTML += htmlstr;
+		});
+		return "";
+	};
+
+	var to_xlsx = function to_xlsx(workbook) {
+		HTMLOUT.innerHTML = "";
+		XLSX.writeFile(workbook, "SheetJSTest.xlsx");
+		return "";
+	};
+
+	return function process_wb(wb) {
+		global_wb = wb;
+		var output = "";
+		switch(get_format()) {
+			case "form": output = to_fmla(wb); break;
+			case "html": output = to_html(wb); break;
+			case "json": output = to_json(wb); break;
+			case "xlsx": output = to_xlsx(wb); break;
+			default: output = to_csv(wb);
+		}
+		if(OUT.innerText === undefined) OUT.textContent = output;
+		else OUT.innerText = output;
+		if(typeof console !== 'undefined') console.log("output", new Date());
+	};
+})();

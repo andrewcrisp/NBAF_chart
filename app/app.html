@@ -6,24 +6,89 @@
 <form enctype="multipart/form-data">
     <input id="upload" type=file name="files[]"></form>
 <div id="chart-container" style="height: 90vh;"></div>
+Output Format: <select name="format" onchange="setfmt()">
+<option value="csv" selected> CSV</option>
+<option value="json"> JSON</option>
+<option value="form"> FORMULAE</option>
+<option value="html"> HTML</option>
+<option value="xlsx"> XLSX</option>
+</select><br />
+<b>Advanced Demo Options:</b>
+Use Web Workers when available: <input type="checkbox" name="useworker">
+Always use UTF8 for CSV / text: <input type="checkbox" name="useutf8" checked>
 <!--<button class="oc-export-btn" id="Export">Export</button>-->
+<pre id="out"></pre>
+<div id="htmlout"></div>
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/es6-promise/4.1.1/es6-promise.auto.min.js"></script>
 <script type="text/javascript" src="js/html2canvas.min.js"></script>
 <script type="text/javascript" src="js/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/jszip.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/xlsx.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/jszip.js"></script>
+
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/xlsx.js"></script>-->
+<script src="./js/xlsx.full.min.js"></script>
 <!--<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>-->
 <script src="./js/jquery.orgchart.js"></script>
-<script src="./excel_functions.js"></script>
-<script src="./utils.js"></script>
+<script src="./js/excel_functions.js"></script>
+<script src="./js/utils.js"></script>
 <script>
-    document.getElementById('upload').addEventListener('change', handleFileSelect, false);
+    //document.getElementById('upload').addEventListener('change', handleFileSelect, false);
+	var global_wb;
+	var global_data;
     var mytable;
     var myobjects;
     var ancestors;
 	var oc;
+	
+	
+	
+	var do_file = (
+		function() {
+			var use_worker = typeof Worker !== 'undefined';
+			var domwork = document.getElementsByName("useworker")[0];
+			console.log("do_file reading");
+			if(!use_worker) {
+				domwork.disabled = !(domwork.checked = false);
+				console.log("don't use worker")
+			}
+			
+			var use_utf8 = true;
+			
+			var xw = function xw(data, cb) {
+				var worker = new Worker('./xlsxworker.js');
+				worker.onmessage = function(e) {
+					switch(e.data.t) {
+						case 'ready': break;
+						case 'e': console.error(e.data.d); break;
+						case 'xlsx': cb(JSON.parse(e.data.d)); break;
+					}
+				};
+				worker.postMessage({d:data,b:'array',c:use_utf8 ? 65001 : void 0});
+			};
+
+		return function do_file(files) {
+			console.log("Inner do_file");
+			use_worker = domwork.checked;
+			//use_utf8 = document.getElementsByName("useutf8")[0].checked;
+			var f = files[0];
+			var reader = new FileReader();
+			
+			reader.onload = function(e) {
+				if(typeof console !== 'undefined') console.log("onload", new Date(), use_worker);
+				var data = new Uint8Array(e.target.result);
+				console.log("data reading");
+				global_data = data;
+				if(use_worker) xw(data, process_wb);
+				else process_wb(XLSX.read(data, {type: 'array', codepage: use_utf8 ? 65001 : void 0}));
+			};
+			reader.readAsArrayBuffer(f);
+		};
+	})();
+	
+
 	
     function handleFileSelect(evt) {
         var files = evt.target.files; // FileList object
@@ -43,17 +108,28 @@
         var workbook = XLSX.read(data, {
           type: 'binary'
         });
-        workbook.SheetNames.forEach(function(sheetName) {
-          // Here is your object
-          var XL_row_object = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
-          var json_object = JSON.stringify(XL_row_object);
-          console.log(JSON.parse(json_object));
-          //jQuery('#xlx_json').val(json_object);
-          mytable = XL_row_object;
-          //myobjects = convert(mytable)
-    	  myobjects = SelectFields(mytable)
-    	  ancestors = BuildNestedArray(myobjects)
-    	  $('#chart-container').orgchart({
+		loadOrgChart(workbook);
+      };
+    
+      reader.onerror = function(ex) {
+        console.log(ex);
+      };
+    
+      reader.readAsBinaryString(file);
+    };
+	
+	function loadOrgChart(workbook) {
+		workbook.SheetNames.forEach(function(sheetName) {
+			// Here is your object
+			var XL_row_object = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
+			var json_object = JSON.stringify(XL_row_object);
+			console.log(JSON.parse(json_object));
+			//jQuery('#xlx_json').val(json_object);
+			mytable = XL_row_object;
+			//myobjects = convert(mytable)
+			myobjects = SelectFields(mytable)
+			ancestors = BuildNestedArray(myobjects)
+			$('#chart-container').orgchart({
               'data' : ancestors[0],
               'nodeContent': 'nodeContent',
     		  'nodeTitle': 'name',
@@ -66,14 +142,15 @@
     		  //'exportButtonName': 'export',
               'exportFileextension': 'png',
               'exportFilename': 'MyOrgChart'
-          });
+			});
         })
-      };
-    
-      reader.onerror = function(ex) {
-        console.log(ex);
-      };
-    
-      reader.readAsBinaryString(file);
-    };
+	}
+	
+	(function() {
+	    var upload = document.getElementById('upload');
+		if(!upload.addEventListener) return;
+		function handleFile(e) {do_file(e.target.files); }
+		upload.addEventListener('change', handleFile, false);
+	})();
+	
 </script>
